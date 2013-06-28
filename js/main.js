@@ -18,6 +18,9 @@ requirejs.config({
     // entry point
     "app": "../app",
 
+    // router
+    "router": "../router",
+
     // models
     "day-model": "./models/day-model",
 
@@ -25,6 +28,8 @@ requirejs.config({
     "days-collection": "./collections/days-collection",
 
     // views
+    "default-view": "./views/default-view",
+    "about-view": "./views/about-view",
     "chart-view": "./views/chart-view"
   },
   shim: {

@@ -3,15 +3,15 @@
 define(
   [
     "backbone",
+    "router",
     "day-model",
     "days-collection",
     "chart-view",
     "text!data"
   ],
-  function(Backbone, DayModel, DaysCollection, ChartView, Data) {
+  function(Backbone, Router, DayModel, DaysCollection, ChartView, Data) {
 
     var initialize = function() {
-      console.log("initialize");
 
       var days = new DaysCollection();
 
@@ -26,7 +26,6 @@ define(
               value: data[i].value
             }));
       };
-      console.log(days);
     }
 
     return {

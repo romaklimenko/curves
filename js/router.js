@@ -3,10 +3,17 @@
 define(
   [
     "backbone",
+    "jquery",
     "default-view",
     "about-view"
   ],
-  function(Backbone, DefaultView, AboutView) {
+  function(
+    Backbone,
+    $,
+    DefaultView,
+    AboutView) {
+
+    "use strict";
 
     var Router = Backbone.Router.extend({
       routes: {
@@ -19,14 +26,14 @@ define(
       },
 
       default: function() {
-        var defaultView = new DefaultView();
-        defaultView.setElement($("#app"));
+        var defaultView = new DefaultView({
+          el: $("#app")
+        });
         defaultView.render();
       },
 
       about: function() {
-        var aboutView = new AboutView();
-        aboutView.setElement($("#app"));
+        var aboutView = new AboutView({ el: $("#app") });
         aboutView.render();
       }
     });

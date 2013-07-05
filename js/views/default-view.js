@@ -1,15 +1,52 @@
 /* global define: true */
 
-define(["backbone"], function(Backbone) {
-  "use strict";
+define(
+  [
+    "backbone",
+    "jquery",
+    "day-model",
+    "days-collection",
+    "text!data",
+    "text!default-view-template",
+    "chart-view"
+  ],
+  function(
+    Backbone,
+    $,
+    DayModel,
+    DaysCollection,
+    Data,
+    DefaultViewTemplate,
+    ChartView) {
 
-  var DefaultView = Backbone.View.extend({
-    tagName: "div",
+    "use strict";
 
-    render: function() {
-      this.$el.html('<h1>Welcome to DefaultView</h1>');
-    }
-  });
+    var DefaultView = Backbone.View.extend({
+      render: function() {
+        this.$el.html(DefaultViewTemplate);
 
-  return DefaultView;
-});
+        var days = new DaysCollection();
+
+        var data = JSON.parse(Data);
+
+        for (var i = 0; i < data.length; i++) {
+          days.add(
+            new DayModel({
+              date: data[i].date,
+              visits: data[i].visits,
+              value: data[i].value
+            })
+          );
+        }
+
+        var chartView = new ChartView({
+          el: $("#chart"),
+          days: days
+        });
+        chartView.render();
+      }
+    });
+
+    return DefaultView;
+  }
+);

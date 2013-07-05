@@ -16,10 +16,10 @@ requirejs.config({
     "data": "../json/data.json",
 
     // entry point
-    "app": "../app",
+    "app": "./app",
 
     // router
-    "router": "../router",
+    "router": "./router",
 
     // models
     "day-model": "./models/day-model",
@@ -30,7 +30,11 @@ requirejs.config({
     // views
     "default-view": "./views/default-view",
     "about-view": "./views/about-view",
-    "chart-view": "./views/chart-view"
+    "chart-view": "./views/chart-view",
+    
+    // templates
+    "default-view-template": "../templates/default-view-template.html",
+    "about-view-template": "../templates/about-view-template.html"
   },
   shim: {
     "backbone": {

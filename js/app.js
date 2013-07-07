@@ -1,6 +1,6 @@
 /* global define: true */
 
-define([],
+define(["router"],
   function() {
 
     "use strict";

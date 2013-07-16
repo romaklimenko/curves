@@ -1,4 +1,5 @@
 /* global define: true */
+/* global window: true */
 
 define(
   [
@@ -6,7 +7,8 @@ define(
     "jquery",
     "day-model",
     "days-collection",
-    "text!data",
+    "text!all",
+    "text!campaign",
     "text!default-view-template",
     "chart-view"
   ],
@@ -15,35 +17,65 @@ define(
     $,
     DayModel,
     DaysCollection,
-    Data,
+    AllData,
+    CampaignData,
     DefaultViewTemplate,
     ChartView) {
 
     "use strict";
 
     var DefaultView = Backbone.View.extend({
+
       render: function() {
         this.$el.html(DefaultViewTemplate);
 
-        var days = new DaysCollection();
+        // all
+        var allDays = new DaysCollection();
 
-        var data = JSON.parse(Data);
+        var allData = JSON.parse(AllData);
 
-        for (var i = 0; i < data.length; i++) {
-          days.add(
+        for (var i = 0; i < allData.length; i++) {
+          allDays.add(
             new DayModel({
-              date: data[i].date,
-              visits: data[i].visits,
-              value: data[i].value
+              date: allData[i].date,
+              visits: allData[i].visits,
+              value: allData[i].value
             })
           );
         }
 
-        var chartView = new ChartView({
-          el: $("#chart"),
-          days: days
+        // campaign
+        var campaignDays = new DaysCollection();
+
+        var campaignData = JSON.parse(CampaignData);
+
+        for (var i = 0; i < campaignData.length; i++) {
+          campaignDays.add(
+            new DayModel({
+              date: campaignData[i].date,
+              visits: campaignData[i].visits,
+              value: campaignData[i].value
+            })
+          );
+        }
+
+        var topChartView = new ChartView({
+          el: $("#default-view-top-chart"),
+          days: allDays
         });
-        chartView.render();
+
+        var bottomChartView = new ChartView({
+          el: $("#default-view-bottom-chart"),
+          days: campaignDays
+        });
+
+        $(window).resize(function() {
+          topChartView.render();
+          bottomChartView.render();
+        });
+
+        topChartView.render();
+        bottomChartView.render();
       }
     });
 

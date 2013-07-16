@@ -6,6 +6,7 @@ requirejs.config({
     // vendor
     "backbone": "./vendor/backbone",
     "d3": "./vendor/d3",
+    "raphael": "./vendor/raphael",
     "jquery": "./vendor/jquery",
     "underscore": "./vendor/underscore",
 
@@ -13,7 +14,8 @@ requirejs.config({
     "text": "./vendor/text",
 
     // resources
-    "data": "../json/data.json",
+    "all": "../json/all.json",
+    "campaign": "../json/campaign.json",
 
     // entry point
     "app": "./app",
@@ -31,7 +33,7 @@ requirejs.config({
     "default-view": "./views/default-view",
     "about-view": "./views/about-view",
     "chart-view": "./views/chart-view",
-    
+
     // templates
     "default-view-template": "../templates/default-view-template.html",
     "about-view-template": "../templates/about-view-template.html"
@@ -43,6 +45,9 @@ requirejs.config({
     },
     "d3": {
       exports: "d3"
+    },
+    "raphael": {
+      exports: "Raphael"
     },
     "jquery": {
       exports: "$"

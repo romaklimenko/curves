@@ -1,15 +1,20 @@
 /* global define: true */
 
-define(["backbone"], function(Backbone) {
+define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
   "use strict";
 
+  var paper;
+
   var ChartView = Backbone.View.extend({
+
     render: function() {
-      this.$el.html("<h1>Welcome to ChartView</h1>");
-      for (var i = 0; i < this.options.days.models.length; i++) {
-        this.$el.append(i);
-      }
-    }
+      if (this.el === undefined) {
+        return;
+      };
+
+      this.$el.empty();
+      this.paper = new Raphael(this.el, this.$el.width(), this.$el.height());
+    },
   });
 
   return ChartView;

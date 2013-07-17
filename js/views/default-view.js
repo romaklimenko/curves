@@ -61,12 +61,12 @@ define(
 
         var topChartView = new ChartView({
           el: $("#default-view-top-chart"),
-          days: allDays
+          models: allDays
         });
 
         var bottomChartView = new ChartView({
           el: $("#default-view-bottom-chart"),
-          days: campaignDays
+          models: campaignDays
         });
 
         $(window).resize(function() {

@@ -39,11 +39,17 @@ define(["backbone", "underscore", "day-model"], function(Backbone, _, DayModel) 
 
       if (this.length / length > step) {
         step++;
-      };
+      }
 
       var result = new DaysCollection();
 
       var model;
+
+      var avg = function(attr) {
+        return Math.floor(_.reduce(span, function(memo, dayModel) {
+            return memo + parseInt(dayModel.get(attr), 10);
+          }, 0) / span.length);
+      };
 
       for (var i = 0; i < this.length; i++) {
         if (i === 0 || i % step === 0) {
@@ -51,17 +57,12 @@ define(["backbone", "underscore", "day-model"], function(Backbone, _, DayModel) 
 
           model = new DayModel({
             date: this.models[i].get("date"),
-            visits: Math.floor(_.reduce(span, function(memo, dayModel) {
-                return memo + dayModel.get("visits");
-              }, 0) / span.length),
-            value: Math.floor(_.reduce(span, function(memo, dayModel) {
-                return memo + dayModel.get("value");
-              }, 0) / span.length)
+            visits: avg("visits"),
+            value: avg("value")
           });
-
           result.add(model);
-        };
-      };
+        }
+      }
       return result;
     }
   });

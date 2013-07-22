@@ -33,7 +33,7 @@ define(["main", "../../js/vendor/chai.js", "day-model", "days-collection"],
       this.daysCollection.add(dayModel7);
       this.daysCollection.add(dayModel8);
       this.daysCollection.add(dayModel9);
-    })
+    });
 
     describe("DaysCollection", function() {
       describe("#complement()", function() {
@@ -81,7 +81,7 @@ define(["main", "../../js/vendor/chai.js", "day-model", "days-collection"],
         });
       });
 
-      describe("#shrink(length)", function() {
+      describe("#shrink(n)", function() {
         it("should return a collection shrinked to specific number of elements", function() {
           var lengthExpected = 3;
           var shrinkedCollection = this.daysCollection.shrink(lengthExpected);
@@ -90,7 +90,7 @@ define(["main", "../../js/vendor/chai.js", "day-model", "days-collection"],
 
         it("original collection should remain the same", function() {
           var lengthExpected = this.daysCollection.length;
-          var shrinkedCollection = this.daysCollection.shrink(lengthExpected);
+          this.daysCollection.shrink(lengthExpected);
           assert.equal(lengthExpected, this.daysCollection.length);
         });
 
@@ -133,11 +133,6 @@ define(["main", "../../js/vendor/chai.js", "day-model", "days-collection"],
           assert.equal(
             Math.floor(1 / 2),
             shrinkedCollection.models[2].get("value"));
-        });
-
-        it("should return whole collection if number requested is bigger than the length of source collection", function() {
-          var shrinkedCollection = this.daysCollection.shrink(this.daysCollection.length * 2);
-          assert.equal(this.daysCollection.length, shrinkedCollection.length)
         });
       });
     });

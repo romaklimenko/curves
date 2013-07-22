@@ -18,7 +18,7 @@ define(["backbone"], function(Backbone) {
 
     getValuePerVisit: function() {
       if (this.get("visits") > 0) {
-        return this.get("value") / this.get("visits");
+        return Math.floor(parseInt(this.get("value"), 10) / parseInt(this.get("visits"), 10));
       }
       else {
         return 0;

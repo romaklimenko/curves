@@ -27,6 +27,8 @@ define(
     var DefaultView = Backbone.View.extend({
 
       render: function() {
+        var i;
+
         this.$el.html(DefaultViewTemplate);
 
         // all
@@ -34,7 +36,7 @@ define(
 
         var allData = JSON.parse(AllData);
 
-        for (var i = 0; i < allData.length; i++) {
+        for (i = 0; i < allData.length; i++) {
           allDays.add(
             new DayModel({
               date: allData[i].date,
@@ -49,7 +51,7 @@ define(
 
         var campaignData = JSON.parse(CampaignData);
 
-        for (var i = 0; i < campaignData.length; i++) {
+        for (i = 0; i < campaignData.length; i++) {
           campaignDays.add(
             new DayModel({
               date: campaignData[i].date,

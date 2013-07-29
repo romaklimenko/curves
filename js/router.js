@@ -5,36 +5,64 @@ define(
     "backbone",
     "jquery",
     "default-view",
-    "about-view"
+    "about-view",
+    "test-view"
   ],
   function(
     Backbone,
     $,
     DefaultView,
-    AboutView) {
+    AboutView,
+    TestView) {
 
     "use strict";
+
+    var defaultView;
+    var aboutView;
+    var testView;
 
     var Router = Backbone.Router.extend({
       routes: {
         "":  "default",
-        "about": "about"
+        "about": "about",
+        "test": "test"
       },
 
       initialize: function() {
+        defaultView = new DefaultView({
+          el: $("#app-default-view")
+        });
+        defaultView.render();
+
+        aboutView = new AboutView({
+          el: $("#app-about-view")
+        });
+        aboutView.render();
+
+        testView = new TestView({
+          el: $("#app-test-view")
+        });
+        testView.render();
+
         Backbone.history.start();
       },
 
       default: function() {
-        var defaultView = new DefaultView({
-          el: $("#app")
-        });
+        $(".app").hide();
+        $("#app-default-view").show();
         defaultView.render();
       },
 
       about: function() {
-        var aboutView = new AboutView({ el: $("#app") });
+        $(".app").hide();
+        $("#app-about-view").show();
         aboutView.render();
+      },
+
+      test: function() {
+        $(".app").hide();
+        $("#app-test-view").show();
+        testView.render();
       }
     });
 

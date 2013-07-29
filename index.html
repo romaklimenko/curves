@@ -20,13 +20,17 @@
               </a>
             </li>
             <li>
-              <a href="./test.html" target="_blank">Test</a>
+              <a href="#"
+                onclick="javascript:window.location.hash = 'test'; return false;">Test
+              </a>
             </li>
           </ul>
         </div>
       </div>
     </div>
-    <div id="app" class="content pure-u-1"></div>
+    <div id="app-default-view" class="content pure-u-1 app"></div>
+    <div id="app-about-view" class="content pure-u-1 app"></div>
+    <div id="app-test-view" class="content pure-u-1 app"></div>
     <script data-main="./js/main" src="./js/vendor/require.js"></script>
   </body>
 </html>

@@ -26,18 +26,16 @@ define(
 
     var DefaultView = Backbone.View.extend({
 
-      render: function() {
+      initialize: function() {
         var i;
 
-        this.$el.html(DefaultViewTemplate);
-
         // all
-        var allDays = new DaysCollection();
+        this.allDays = new DaysCollection();
 
         var allData = JSON.parse(AllData);
 
         for (i = 0; i < allData.length; i++) {
-          allDays.add(
+          this.allDays.add(
             new DayModel({
               date: allData[i].date,
               visits: allData[i].visits,
@@ -47,12 +45,12 @@ define(
         }
 
         // campaign
-        var campaignDays = new DaysCollection();
+        this.campaignDays = new DaysCollection();
 
         var campaignData = JSON.parse(CampaignData);
 
         for (i = 0; i < campaignData.length; i++) {
-          campaignDays.add(
+          this.campaignDays.add(
             new DayModel({
               date: campaignData[i].date,
               visits: campaignData[i].visits,
@@ -60,15 +58,20 @@ define(
             })
           );
         }
+      },
+
+      render: function() {
+
+        this.$el.html(DefaultViewTemplate);
 
         var topChartView = new ChartView({
           el: $("#default-view-top-chart"),
-          models: allDays
+          models: this.allDays
         });
 
         var bottomChartView = new ChartView({
           el: $("#default-view-bottom-chart"),
-          models: campaignDays
+          models: this.campaignDays
         });
 
         $(window).resize(function() {

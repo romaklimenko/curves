@@ -6,18 +6,19 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
 
   var ChartView = Backbone.View.extend({
 
-    // the step between two movable points in x-axis
-    // so circle radius around every single movable point should be
-    // <= this.step / 2
-    minimalColumnWidth: 100,
+    paths: {},
+
+    pointsInLine: 10,
+
+    margin: 20,
 
     initialize: function() {
-      this.initialModels = this.options.models;
-      this.initialModels.complement();
+      this.options.models.complement();
+      this.collection = this.options.models.shrink(this.pointsInLine);
     },
 
     height: function() {
-      return this.$el.height();
+      return this.$el.height() - this.margin;
     },
 
     width: function() {
@@ -25,41 +26,89 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
     },
 
     render: function() {
-      if (this.el === undefined) {
+      var chartView = this;
+
+      if (chartView.el === undefined) {
         return;
       }
 
-      if (this.paper !== undefined) {
-        this.paper.remove();
+      if (chartView.paper !== undefined) {
+        chartView.paper.remove();
       }
 
-      this.$el.empty();
+      chartView.$el.empty();
 
-      this.paper = new Raphael(this.el, this.width(), this.height());
+      chartView.paper = new Raphael(chartView.el, chartView.$el.width(), chartView.$el.height());
 
-      this.models = this.initialModels.shrink(
-        Math.floor(this.width() / this.minimalColumnWidth));
+      chartView.columnWidth = Math.floor(chartView.$el.width() / chartView.collection.length);
 
-      _.each(this.models.models, function(m) {
-        m.set("valuePerVisit", m.getValuePerVisit());
-      });
+      chartView.renderPaths({ dots: true });
+    },
 
-      this.columnWidth = Math.floor(this.width() / this.models.length);
+    removePath: function(pathName) {
+      var chartView = this;
 
-      this.renderPath(
-        this.paper.valuesPath,
-        "value",
-        "#FAD500");
+      var path = chartView[pathName];
 
-      this.renderPath(
-        this.paper.visitsPath,
-        "visits",
-        "#4892D2");
+      if (path !== undefined && path.remove !== undefined) {
+        path.remove();
+      }
+    },
 
-      this.renderPath(
-        this.paper.valuePerVisitPath,
-        "valuePerVisit",
-        "#4CB849");
+    renderPaths: function(options) {
+      var dots = (options !== undefined && options.dots);
+
+      var chartView = this;
+
+      // visits
+      chartView.renderPath(
+        "visitsPath",
+        {
+          color: "#4892D2",
+          cursor: "move",
+          "stroke-width": 4
+        },
+        function(model) {
+          return Math.floor(parseInt(model.get("visits"), 10));
+        },
+        !dots ? undefined : function(model, visits) {
+          model.set("visits", visits);
+        });
+
+      // value
+      chartView.renderPath(
+        "valuesPath",
+        {
+          color: "#FAD500",
+          cursor: "move",
+          "stroke-width": 4
+        },
+        function(model) {
+          return Math.floor(parseInt(model.get("value"), 10));
+        },
+        !dots ? undefined : function(model, value) {
+          model.set("value", value);
+        });
+
+      // value per visit
+      chartView.renderPath(
+        "valuePerVisitPath",
+        {
+          color: "#4CB849",
+          cursor: "hand",
+          "stroke-width": 2
+        },
+        function(model) {
+          var visits = parseInt(model.get("visits"), 10);
+          var value = parseInt(model.get("value"), 10);
+          if (visits > 0) {
+            return Math.floor(value / visits);
+          }
+          else {
+            return 0;
+          }
+        }
+      );
     },
 
     getAnchors: function(p1x, p1y, p2x, p2y, p3x, p3y) {
@@ -87,61 +136,107 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
       };
     },
 
-    renderPath: function(path, attribute, color) {
-      var X, X0, X2, Y, Y0, Y2, a, p, x, y;
-      X = this.width() / this.models.models.length;
+    renderPath: function(pathName, attributes, getter, setter) {
+      var X0, X2, Y, Y0, Y2, a, p, x, y;
 
-      var max = Math.floor(
-        _.max(
-          this.models.models,
+      var chartView = this;
+
+      var X = chartView.width() / chartView.collection.models.length;
+
+      var max =
+        getter(_.max(
+          chartView.collection.models,
           function(model) {
-            return parseInt(model.get(attribute), 10);
-          }).get(attribute) * 1.5);
+            return parseInt(getter(model), 10);
+          }));
 
-      Y = this.height() / max;
+      var maxModelAttributeValue = max * 1.5;
 
-      if (path !== undefined && path.remove !== undefined) {
-        path.remove();
-      }
+      Y = chartView.height() / maxModelAttributeValue;
 
-      path = this.paper.path().attr({
-
-        stroke: color,
-        "stroke-width": 4,
+      var path = chartView.paper.path().attr({
+        stroke: attributes.color,
+        "stroke-width": attributes["stroke-width"],
         "stroke-linejoin": "round"
       });
 
-      for (var i = 0; i < this.models.models.length; i++) {
-        y = Math.round(this.height() - 20 - Y * this.models.models[i].get(attribute));
+      for (var i = 0; i < chartView.collection.models.length; i++) {
+
+        var prevModel = chartView.collection.models[i - 1];
+        var model = chartView.collection.models[i];
+        var nextModel = chartView.collection.models[i + 1];
+
+        y = Math.round(chartView.height() - Y * getter(model));
         x = Math.round(X * (i + 0.5));
         if (i === 0) {
           p = ["M", x, y, "C", x, y];
         }
-        else if (i !== 0 && i < this.models.models.length - 1) {
-          Y0 = Math.round(this.height() - 20 - Y * parseInt(this.models.models[i - 1].get(attribute), 10));
+        else if (i !== 0 && i < chartView.collection.models.length - 1) {
+          Y0 = Math.round(
+            chartView.height() - Y * parseInt(getter(prevModel), 10));
           X0 = Math.round(X * (i - 0.5));
-          Y2 = Math.round(this.height() - 20 - Y * parseInt(this.models.models[i + 1].get(attribute), 10));
+          Y2 = Math.round(
+            chartView.height() - Y * parseInt(getter(nextModel), 10));
           X2 = Math.round(X * (i + 1.5));
-          a = this.getAnchors(X0, Y0, x, y, X2, Y2);
+          a = chartView.getAnchors(X0, Y0, x, y, X2, Y2);
           p = p.concat([a.x1, a.y1, x, y, a.x2, a.y2]);
         }
 
-        this.paper.circle(x, y, 5).attr(
-          {
-            cursor: "move",
-            fill: "#FFF",
-            stroke: color,
-            "stroke-width": 3,
-            "title": "Visits: " + this.models.models[i].get("visits") +
-              "\nValue: " + this.models.models[i].get("value") +
-              "\nValue per Visit: " + this.models.models[i].get("valuePerVisit")
-          });
+        if (setter !== undefined) {
+          chartView.renderDot(x, y, i, attributes, model, Y, setter);
+        }
       }
       p = p.concat([x, y, x, y]);
+
       path.attr({
         path: p
-      });
+      }).toBack();
+
+      chartView[pathName] = path;
     },
+
+    renderDot: function(x, y, i, attributes, model, Y, setter) {
+      var chartView = this;
+
+      var currentY;
+
+      chartView.paper
+        .circle(x, y, 5)
+        .data("models-i", i)
+        .attr(
+        {
+          cursor: attributes.cursor,
+          fill: "#FFF",
+          stroke: attributes.color,
+          "stroke-width": 3,
+          "title": "Visits: " + model.get("visits") +
+            "\nValue: " + model.get("value") +
+            "\nValue per Visit: " +
+              model.getValuePerVisit()
+        })
+        .drag(
+          //onmove
+          function(dx, dy) {
+            var attributeValue = Math.floor((chartView.height() - (currentY + dy)) / Y);
+            setter(chartView.collection.models[this.data("models-i")], attributeValue);
+            this.attr("cy", Math.round(chartView.height() - Y * attributeValue));
+
+            chartView.removePath("visitsPath");
+            chartView.removePath("valuesPath");
+            chartView.removePath("valuePerVisitPath");
+
+            chartView.renderPaths({ dots: false });
+          },
+          //onstart
+          function() {
+            currentY = this.attr("cy");
+          },
+          // onend
+          function() {
+            chartView.render();
+          })
+        .toBack();
+    }
   });
 
   return ChartView;

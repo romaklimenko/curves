@@ -79,6 +79,21 @@ define(
           bottomChartView.render();
         });
 
+        bottomChartView.collection.on("change", function(campaignModel) {
+          function delta(model, attribute) {
+            return model.get(attribute) - model.previous(attribute);
+          }
+
+          var allDataModel = topChartView.collection.get(campaignModel.id);
+
+          allDataModel.set(
+            {
+              "visits": allDataModel.get("visits") + delta(campaignModel, "visits"),
+              "value": allDataModel.get("value") + delta(campaignModel, "value")
+            });
+          topChartView.render();
+        }, this);
+
         topChartView.render();
         bottomChartView.render();
       }

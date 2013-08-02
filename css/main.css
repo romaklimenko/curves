@@ -3,10 +3,16 @@ body, html {
 }
 
 div.app {
-  height:100%;
-  margin-top: 38px;
+  height:90%;
 }
 
 div#default-view-top-chart, div#default-view-bottom-chart {
-  height: 50%;
+  height: 45%;
+}
+
+div.chart-header {
+  text-transform: uppercase;
+  color: #565d64;
+  margin: 0px 0px 0px 10px;
+  font-size: 90%;
 }

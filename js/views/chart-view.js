@@ -4,100 +4,118 @@
 define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
   "use strict";
 
+  // ## Chart View
+  // It knows how to display Visits, Value and Value per Visit.
+  // It renders draggable dots on Visits and Value lines.
+  // You can drag these dots to change models.
   var ChartView = Backbone.View.extend({
 
-    paths: {},
+    // How many points should be shown on each chart's line.
+    pointsInLine: 5,
 
-    pointsInLine: 10,
+    // Chart's margin. It makes sence only for lines. Scales can be placed
+    // inside margin area.
+    margin:
+    {
+      top: 50,
+      right: 50,
+      bottom: 50,
+      left: 50
+    },
 
-    margin: 20,
+    // We look for maximum attribute value to render lines in proper scale,
+    // but if maximum attribute value is to small, it's good to increase it
+    // in order to make point drag smoother.
+    minimalMax: 50,
 
     initialize: function() {
+      // Make sure whar input collection is uniformly filled.
       this.options.models.complement();
+      // Shrink collection to not overload user with big ammount of movable
+      // points.
       this.collection = this.options.models.shrink(this.pointsInLine);
     },
 
-    height: function() {
-      return this.$el.height() - this.margin;
+    // this.$el.height() is a whole view height but heightMinusMargins()
+    // return you a view's height without margins. Sincerely, yours C.O.
+    heightMinusMargins: function() {
+      return this.$el.height() - this.margin.top - this.margin.bottom;
     },
-
-    width: function() {
-      return this.$el.width();
+    // see heightMinusMargins
+    widthMinusMargins: function() {
+      return this.$el.width() - this.margin.left - this.margin.right;
     },
 
     render: function() {
-      var chartView = this;
+      var self = this;
 
-      if (chartView.el === undefined) {
-        return;
-      }
+      // Let's start from blank scheet.
+      self.$el.empty();
 
-      if (chartView.paper !== undefined) {
-        chartView.paper.remove();
-      }
+      self.paper = new Raphael(self.el, self.$el.width(), self.$el.height());
 
-      chartView.$el.empty();
+      // This is a x-distance between draggable points.
+      self.columnWidth =
+        Math.floor(self.widthMinusMargins() / self.collection.length);
 
-      chartView.paper = new Raphael(chartView.el, chartView.$el.width(), chartView.$el.height());
-
-      chartView.columnWidth = Math.floor(chartView.$el.width() / chartView.collection.length);
-
-      chartView.renderPaths({ dots: true });
+      // dots: true - means this is not re-render from move-event
+      // so render please with dots. See further to understand why.
+      self.renderPaths({ dots: true });
     },
 
-    removePath: function(pathName) {
-      var chartView = this;
-
-      var path = chartView[pathName];
-
-      if (path !== undefined && path.remove !== undefined) {
-        path.remove();
-      }
-    },
-
+    // No time to explain: render paths!
     renderPaths: function(options) {
+      var self = this;
+
+      // so do we need a dots or not?
       var dots = (options !== undefined && options.dots);
 
-      var chartView = this;
-
       // visits
-      chartView.renderPath(
+      self.renderPath(
+        // path name
         "visitsPath",
         {
           color: "#4892D2",
           cursor: "move",
           "stroke-width": 4
         },
+        // getter
         function(model) {
           return Math.floor(parseInt(model.get("visits"), 10));
         },
+        // setter
         !dots ? undefined : function(model, visits) {
           model.set("visits", visits);
         });
 
       // value
-      chartView.renderPath(
+      self.renderPath(
+        // path name
         "valuesPath",
         {
           color: "#FAD500",
           cursor: "move",
           "stroke-width": 4
         },
+        // getter
         function(model) {
           return Math.floor(parseInt(model.get("value"), 10));
         },
+        // setter
         !dots ? undefined : function(model, value) {
           model.set("value", value);
         });
 
       // value per visit
-      chartView.renderPath(
+      self.renderPath(
+        // path name
         "valuePerVisitPath",
         {
           color: "#4CB849",
           cursor: "hand",
           "stroke-width": 2
         },
+        // getter
         function(model) {
           var visits = parseInt(model.get("visits"), 10);
           var value = parseInt(model.get("value"), 10);
@@ -108,26 +126,41 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
             return 0;
           }
         }
+        // threre are no setter here because Value per Visit is calculated based on
+        // Value and Visits
       );
     },
 
     getAnchors: function(p1x, p1y, p2x, p2y, p3x, p3y) {
-      var a, alpha, b, dx1, dx2, dy1, dy2, l1, l2;
-      l1 = (p2x - p1x) / 2;
-      l2 = (p3x - p2x) / 2;
-      a = Math.atan((p2x - p1x) / Math.abs(p2y - p1y));
-      b = Math.atan((p3x - p2x) / Math.abs(p2y - p3y));
+      // Every time I see this code I tryind to remember what it means.
+      // In short, it takes 3 points coordinates: previous dot in chart's line,
+      // current point and the next point.
+      // Then it makes some trigonometry and returns two points.
+      // If you link these points by line, the (p2x, p2y) point
+      // will be in the middle of this line.
+      // I took this code here, BTW:
+      // https://github.com/DmitryBaranovskiy/g.raphael/blob/master/g.line.js
+      var l1 = (p2x - p1x) / 2;
+      var l2 = (p3x - p2x) / 2;
+
+      var a = Math.atan((p2x - p1x) / Math.abs(p2y - p1y));
+      var b = Math.atan((p3x - p2x) / Math.abs(p2y - p3y));
+
       if (p1y < p2y) {
         a = Math.PI - a;
       }
+
       if (p3y < p2y) {
         b = Math.PI - b;
       }
-      alpha = Math.PI / 2 - ((a + b) % (Math.PI * 2)) / 2;
-      dx1 = l1 * Math.sin(alpha + a);
-      dy1 = l1 * Math.cos(alpha + a);
-      dx2 = l2 * Math.sin(alpha + b);
-      dy2 = l2 * Math.cos(alpha + b);
+
+      var alpha = Math.PI / 2 - ((a + b) % (Math.PI * 2)) / 2;
+
+      var dx1 = l1 * Math.sin(alpha + a);
+      var dy1 = l1 * Math.cos(alpha + a);
+      var dx2 = l2 * Math.sin(alpha + b);
+      var dy2 = l2 * Math.cos(alpha + b);
+
       return {
         x1: p2x - dx1,
         y1: p2y + dy1,
@@ -136,72 +169,108 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
       };
     },
 
+    // This renders a line, a draggable dots on this line and the other stuff
+    // related to (separately) Visits, Value or Value per Visit.
     renderPath: function(pathName, attributes, getter, setter) {
-      var X0, X2, Y, Y0, Y2, a, p, x, y;
+      var self = this;
 
-      var chartView = this;
+      // Find maximum value of given model attribute.
+      var maxModelAttributeValue =
+        Math.max(
+          getter(_.max(
+            self.collection.models,
+            function(model) {
+              return parseInt(getter(model), 10);
+            })),
+          self.minimalMax);
 
-      var X = chartView.width() / chartView.collection.models.length;
+      // How much y increases if we increase model attribute by 1
+      var yPerModel =
+        self.heightMinusMargins() /
+          maxModelAttributeValue;
 
-      var max =
-        getter(_.max(
-          chartView.collection.models,
-          function(model) {
-            return parseInt(getter(model), 10);
-          }));
+      // The x-distance between two draggable points.
+      var xPerModel = self.widthMinusMargins() /
+        (self.collection.models.length - 1);
 
-      var maxModelAttributeValue = max * 1.5;
-
-      Y = chartView.height() / maxModelAttributeValue;
-
-      var path = chartView.paper.path().attr({
+      // Create a path an set its style.
+      var path = self.paper.path().attr({
         stroke: attributes.color,
         "stroke-width": attributes["stroke-width"],
         "stroke-linejoin": "round"
       });
 
-      for (var i = 0; i < chartView.collection.models.length; i++) {
+      var p, x, y;
 
-        var prevModel = chartView.collection.models[i - 1];
-        var model = chartView.collection.models[i];
-        var nextModel = chartView.collection.models[i + 1];
+      // Move through all the models in view's collection.
+      for (var i = 0; i < self.collection.models.length; i++) {
 
-        y = Math.round(chartView.height() - Y * getter(model));
-        x = Math.round(X * (i + 0.5));
+        // Remember dots in getAnchors? That's why we need three models.
+        var prevModel = self.collection.models[i - 1];
+        var model = self.collection.models[i];
+        var nextModel = self.collection.models[i + 1];
+
+        // Get current draggable point coordinates.
+        y = self.heightMinusMargins() -
+          yPerModel * getter(model) + self.margin.top;
+        x = xPerModel * i + self.margin.left;
+
         if (i === 0) {
+          // First time here? Try to start a path.
           p = ["M", x, y, "C", x, y];
         }
-        else if (i !== 0 && i < chartView.collection.models.length - 1) {
-          Y0 = Math.round(
-            chartView.height() - Y * parseInt(getter(prevModel), 10));
-          X0 = Math.round(X * (i - 0.5));
-          Y2 = Math.round(
-            chartView.height() - Y * parseInt(getter(nextModel), 10));
-          X2 = Math.round(X * (i + 1.5));
-          a = chartView.getAnchors(X0, Y0, x, y, X2, Y2);
+        else if (i !== 0 && i < self.collection.models.length - 1) {
+          // y of previous point in line
+          var Y0 = self.heightMinusMargins() -
+            yPerModel * getter(prevModel);
+          // x of prevous point in line
+          var X0 = xPerModel * (i - 1);
+          // y of next point in line
+          var Y2 = self.heightMinusMargins() -
+            yPerModel * getter(nextModel);
+          // x of next point in line
+          var X2 = xPerModel * (i + 1);
+
+          var a = self.getAnchors(X0, Y0, x, y, X2, Y2);
+
           p = p.concat([a.x1, a.y1, x, y, a.x2, a.y2]);
         }
 
         if (setter !== undefined) {
-          chartView.renderDot(x, y, i, attributes, model, Y, setter);
+          // We dont't draw draggable dots if we don't have a setter.
+          // Because we don't know how to handle such drags.
+          self.renderDot(x, y, i, attributes, model, yPerModel, setter);
         }
       }
+      // The last path's span.
       p = p.concat([x, y, x, y]);
 
+      // Add array to our path and move it (path) to back (to not cover
+      // the dots).
       path.attr({
         path: p
       }).toBack();
 
-      chartView[pathName] = path;
+      // save a link to path (we need it do delete this path later).
+      self[pathName] = path;
     },
 
-    renderDot: function(x, y, i, attributes, model, Y, setter) {
-      var chartView = this;
+    removePath: function(pathName) {
+      var path = this[pathName];
+      if (path !== undefined && path.remove !== undefined) {
+        path.remove();
+      }
+    },
+
+    renderDot: function(x, y, i, attributes, model, yPerModel, setter) {
+      var self = this;
 
       var currentY;
 
-      chartView.paper
-        .circle(x, y, 5)
+      var radius = 5;
+
+      self.paper
+        .circle(x, y, radius)
         .data("models-i", i)
         .attr(
         {
@@ -212,28 +281,46 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           "title": "Visits: " + model.get("visits") +
             "\nValue: " + model.get("value") +
             "\nValue per Visit: " +
-              model.getValuePerVisit()
+              model.getValuePerVisit() +
+            "\nDate: " + model.id
         })
         .drag(
           //onmove
           function(dx, dy) {
-            var attributeValue = Math.floor((chartView.height() - (currentY + dy)) / Y);
-            setter(chartView.collection.models[this.data("models-i")], attributeValue);
-            this.attr("cy", Math.round(chartView.height() - Y * attributeValue));
+            var circle = this;
+            var cy = Math.min(
+              currentY + dy,
+              self.heightMinusMargins() + self.margin.top);
+            cy = cy < self.margin.top ?
+              self.margin.top : cy;
 
-            chartView.removePath("visitsPath");
-            chartView.removePath("valuesPath");
-            chartView.removePath("valuePerVisitPath");
+            var attributeValue = Math.floor(
+              (self.heightMinusMargins() - cy + self.margin.top) / yPerModel);
 
-            chartView.renderPaths({ dots: false });
+            setter(
+              self.collection.models[circle.data("models-i")],
+              attributeValue);
+
+            circle.attr(
+              "cy",
+              Math.floor(
+                self.heightMinusMargins() -
+                  yPerModel * attributeValue) + self.margin.top);
+
+            self.removePath("visitsPath");
+            self.removePath("valuesPath");
+            self.removePath("valuePerVisitPath");
+
+            self.renderPaths({ dots: false });
           },
           //onstart
           function() {
-            currentY = this.attr("cy");
+            var circle = this;
+            currentY = circle.attr("cy");
           },
           // onend
           function() {
-            chartView.render();
+            self.render();
           })
         .toBack();
     }

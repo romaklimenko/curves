@@ -31,18 +31,14 @@ requirejs.config({
 
     // views
     "default-view": "./views/default-view",
-    "about-view": "./views/about-view",
-    "test-view": "./views/test-view",
     "chart-view": "./views/chart-view",
 
     // templates
-    "default-view-template": "../templates/default-view-template.html",
-    "about-view-template": "../templates/about-view-template.html",
-    "test-view-template": "../templates/test-view-template.html"
+    "default-view-template": "../templates/default-view-template.html"
   },
   shim: {
     "backbone": {
-      deps: ["underscore"],
+      deps: ["underscore", "jquery"],
       exports: "Backbone"
     },
     "d3": {

@@ -17,10 +17,10 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
     // inside margin area.
     margin:
     {
-      top: 50,
-      right: 50,
-      bottom: 50,
-      left: 50
+      top: 10,
+      right: 30,
+      bottom: 30,
+      left: 30
     },
 
     // We look for maximum attribute value to render lines in proper scale,
@@ -288,24 +288,57 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           //onmove
           function(dx, dy) {
             var circle = this;
-            var cy = Math.min(
-              currentY + dy,
-              self.heightMinusMargins() + self.margin.top);
-            cy = cy < self.margin.top ?
-              self.margin.top : cy;
 
-            var attributeValue = Math.floor(
-              (self.heightMinusMargins() - cy + self.margin.top) / yPerModel);
+            function getAttributeValue() {
+              var cy = currentY + dy;
+
+              if (self.heightMinusMargins() + self.margin.top - cy < 0) {
+                cy = self.heightMinusMargins() + self.margin.top;
+              }
+
+              var attributeValue = Math.floor(
+                (self.heightMinusMargins() - cy + self.margin.top) /
+                  yPerModel);
+
+              return attributeValue;
+            }
+
+            function getY(attributeValue) {
+              var cy;
+
+              if (currentY === self.margin.top && attributeValue > self.minimalMax) {
+                // If point is on top, it should stay
+                cy = self.margin.top;
+              }
+              else if (attributeValue <= self.minimalMax) {
+                cy = Math.floor(
+                    self.heightMinusMargins() -
+                    self.heightMinusMargins() / self.minimalMax * attributeValue) +
+                  self.margin.top;
+              }
+              else {
+                cy = Math.floor(
+                    self.heightMinusMargins() -
+                    yPerModel * attributeValue) +
+                  self.margin.top;
+              }
+
+              if (cy < self.margin.top) {
+                cy = self.margin.top;
+              }
+
+              return cy;
+            }
+
+            var attributeValue = getAttributeValue();
 
             setter(
               self.collection.models[circle.data("models-i")],
               attributeValue);
 
-            circle.attr(
-              "cy",
-              Math.floor(
-                self.heightMinusMargins() -
-                  yPerModel * attributeValue) + self.margin.top);
+            var cy = getY(attributeValue);
+            console.log(cy);
+            circle.attr("cy", cy);
 
             self.removePath("visitsPath");
             self.removePath("valuesPath");
@@ -317,6 +350,11 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           function() {
             var circle = this;
             currentY = circle.attr("cy");
+            self.paper.forEach(function (el) {
+              if (el.type === "circle" && el.id !== circle.id) {
+                el.hide();
+              }
+            });
           },
           // onend
           function() {

@@ -17,10 +17,10 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
     // inside margin area.
     margin:
     {
-      top: 10,
-      right: 30,
-      bottom: 30,
-      left: 30
+      top: 50,
+      right: 50,
+      bottom: 50,
+      left: 50
     },
 
     // We look for maximum attribute value to render lines in proper scale,
@@ -303,58 +303,27 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
               return attributeValue;
             }
 
-            function getY(attributeValue) {
-              var cy;
-
-              if (currentY === self.margin.top && attributeValue > self.minimalMax) {
-                // If point is on top, it should stay
-                cy = self.margin.top;
-              }
-              else if (attributeValue <= self.minimalMax) {
-                cy = Math.floor(
-                    self.heightMinusMargins() -
-                    self.heightMinusMargins() / self.minimalMax * attributeValue) +
-                  self.margin.top;
-              }
-              else {
-                cy = Math.floor(
-                    self.heightMinusMargins() -
-                    yPerModel * attributeValue) +
-                  self.margin.top;
-              }
-
-              if (cy < self.margin.top) {
-                cy = self.margin.top;
-              }
-
-              return cy;
-            }
-
             var attributeValue = getAttributeValue();
 
             setter(
               self.collection.models[circle.data("models-i")],
               attributeValue);
 
-            var cy = getY(attributeValue);
-            console.log(cy);
-            circle.attr("cy", cy);
+            self.paper.forEach(function (el) {
+              if (el.type === "circle") {
+                el.hide();
+              }
+            });
 
             self.removePath("visitsPath");
             self.removePath("valuesPath");
             self.removePath("valuePerVisitPath");
 
-            self.renderPaths({ dots: false });
+            self.renderPaths({ dots: true });
           },
           //onstart
           function() {
-            var circle = this;
-            currentY = circle.attr("cy");
-            self.paper.forEach(function (el) {
-              if (el.type === "circle" && el.id !== circle.id) {
-                el.hide();
-              }
-            });
+            currentY = this.attr("cy");
           },
           // onend
           function() {

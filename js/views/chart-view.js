@@ -20,7 +20,7 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
       top: 50,
       right: 50,
       bottom: 50,
-      left: 50
+      left: 55
     },
 
     // We look for maximum attribute value to render lines in proper scale,
@@ -58,17 +58,12 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
       self.columnWidth =
         Math.floor(self.widthMinusMargins() / self.collection.length);
 
-      // dots: true - means this is not re-render from move-event
-      // so render please with dots. See further to understand why.
-      self.renderPaths({ dots: true });
+      self.renderPaths();
     },
 
     // No time to explain: render paths!
-    renderPaths: function(options) {
+    renderPaths: function() {
       var self = this;
-
-      // so do we need a dots or not?
-      var dots = (options !== undefined && options.dots);
 
       // visits
       self.renderPath(
@@ -84,7 +79,7 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           return Math.floor(parseInt(model.get("visits"), 10));
         },
         // setter
-        !dots ? undefined : function(model, visits) {
+        function(model, visits) {
           model.set("visits", visits);
         });
 
@@ -102,7 +97,7 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           return Math.floor(parseInt(model.get("value"), 10));
         },
         // setter
-        !dots ? undefined : function(model, value) {
+        function(model, value) {
           model.set("value", value);
         });
 
@@ -253,6 +248,8 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
 
       // save a link to path (we need it do delete this path later).
       self[pathName] = path;
+
+      self.renderScales();
     },
 
     removePath: function(pathName) {
@@ -319,7 +316,8 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
             self.removePath("valuesPath");
             self.removePath("valuePerVisitPath");
 
-            self.renderPaths({ dots: true });
+            self.renderPaths();
+            self.renderScales();
           },
           //onstart
           function() {
@@ -330,7 +328,318 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
             self.render();
           })
         .toBack();
+    },
+
+    renderLine: function(x0, y0, x1, y1) {
+      return this.paper.path("M" + x0 + "," + y0 + "L" + x1 + "," + y1);
+    },
+
+    renderScales: function() {
+      this.renderVisitsScale();
+      this.renderValueScale();
+      this.renderValuePerVisitScale();
+    },
+
+    renderVisitsScale: function() {
+      var self = this;
+
+      // todo: this should be a single path
+
+      // vertical scale line
+      self.renderLine(
+          // x0
+          Math.floor(self.margin.left / 2),
+          // y0
+          self.margin.bottom,
+          // x1
+          Math.floor(self.margin.left / 2),
+          // y1
+          self.margin.bottom + self.heightMinusMargins())
+        .attr(
+        {
+          stroke: "#4892D2",
+          "stroke-width": 4
+        });
+
+      // upper horizontal line
+      self.renderLine(
+          // x0
+          Math.floor(self.margin.left / 2),
+          // y0
+          self.margin.bottom + 2,
+          // x1
+          Math.floor(self.margin.left / 2) - 5,
+          // y1
+          self.margin.bottom + 2)
+        .attr(
+        {
+          stroke: "#4892D2",
+          "stroke-width": 4
+        });
+
+      // bottom horizontal line
+      self.renderLine(
+          // x0
+          Math.floor(self.margin.left / 2),
+          // y0
+          self.margin.bottom + self.heightMinusMargins() - 2,
+          // x1
+          Math.floor(self.margin.left / 2) - 5,
+          // y1
+          self.margin.bottom + self.heightMinusMargins() - 2)
+        .attr(
+        {
+          stroke: "#4892D2",
+          "stroke-width": 4
+        });
+
+      if (self.paper.maxVisitsText !== undefined) {
+        self.paper.maxVisitsText.remove();
+      }
+
+      self.paper.maxVisitsText = self.paper.text(
+          // x
+          Math.floor(self.margin.left / 2) - 12,
+          // y
+          self.margin.top,
+          // text
+          _.max(
+            self.collection.models,
+            function(model) {
+              return parseInt(model.get("visits"), 10);
+            }).get("visits"))
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "end",
+          "font-size": 14
+        });
+
+      if (self.paper.zeroVisitsText === undefined) {
+        self.paper.zeroVisitsText = self.paper.text(
+          // x
+          Math.floor(self.margin.left / 2) - 12,
+          // y
+          self.margin.top + self.heightMinusMargins(),
+          // text
+          "0")
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "start",
+          "font-size": 14
+        });
+      }
+    },
+
+    renderValueScale: function() {
+      var self = this;
+
+      // todo: this should be a single path
+
+      // vertical scale line
+      self.renderLine(
+          // x0
+          Math.floor(this.margin.left / 2) + 4,
+          // y0
+          self.margin.bottom,
+          // x1
+          Math.floor(self.margin.left / 2) + 4,
+          // y1
+          self.margin.bottom + self.heightMinusMargins())
+        .attr(
+        {
+          stroke: "#FAD500",
+          "stroke-width": 4
+        });
+
+      // upper horizontal line
+      self.renderLine(
+          // x0
+          Math.floor(self.margin.left / 2) + 4,
+          // y0
+          self.margin.bottom + 2,
+          // x1
+          Math.floor(self.margin.left / 2) + 9,
+          // y1
+          self.margin.bottom + 2)
+        .attr(
+        {
+          stroke: "#FAD500",
+          "stroke-width": 4
+        });
+
+      // bottom horizontal line
+      self.renderLine(
+          // x0
+          Math.floor(self.margin.left / 2) + 4,
+          // y0
+          self.margin.bottom + self.heightMinusMargins() - 2,
+          // x1
+          Math.floor(self.margin.left / 2) + 9,
+          // y1
+          self.margin.bottom + self.heightMinusMargins() - 2)
+        .attr(
+        {
+          stroke: "#FAD500",
+          "stroke-width": 4
+        });
+
+      if (self.paper.maxValueText !== undefined) {
+        self.paper.maxValueText.remove();
+      }
+
+      self.paper.maxValueText = self.paper.text(
+          // x
+          Math.floor(self.margin.left / 2) + 15,
+          // y
+          self.margin.top,
+          // text
+          _.max(
+            self.collection.models,
+            function(model) {
+              return parseInt(model.get("value"), 10);
+            }).get("value"))
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "end",
+          "font-size": 14
+        });
+
+      if (self.paper.zeroValueText === undefined) {
+        self.paper.zeroValueText = self.paper.text(
+          // x
+          Math.floor(self.margin.left / 2) + 15,
+          // y
+          self.margin.top + self.heightMinusMargins(),
+          // text
+          "0")
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "start",
+          "font-size": 14
+        });
+      }
+    },
+
+    renderValuePerVisitScale: function() {
+      /*var x0 = this.margin.left + this.widthMinusMargins() +
+        Math.floor(this.margin.right / 2);
+      var y0 = this.margin.bottom;
+      var x1 = x0;
+      var y1 = this.margin.bottom + this.heightMinusMargins();
+      this.renderLine(x0, y0, x1, y1).attr(
+        {
+          stroke: "#4CB849",
+          "stroke-width": 1
+        });*/
+      var self = this;
+
+      // todo: this should be a single path
+
+      // vertical scale line
+      self.renderLine(
+          // x0
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2),
+          // y0
+          self.margin.bottom,
+          // x1
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2),
+          // y1
+          self.margin.bottom + self.heightMinusMargins())
+        .attr(
+        {
+          stroke: "#4CB849",
+          "stroke-width": 1
+        });
+
+      // upper horizontal line
+      self.renderLine(
+          // x0
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2),
+          // y0
+          self.margin.bottom + 1,
+          // x1
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2) + 4,
+          // y1
+          self.margin.bottom + 1)
+        .attr(
+        {
+          stroke: "#4CB849",
+          "stroke-width": 1
+        });
+
+      // bottom horizontal line
+      self.renderLine(
+          // x0
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2),
+          // y0
+          self.margin.bottom + self.heightMinusMargins() - 1,
+          // x1
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2) + 4,
+          // y1
+          self.margin.bottom + self.heightMinusMargins() - 1)
+        .attr(
+        {
+          stroke: "#4CB849",
+          "stroke-width": 1
+        });
+
+      if (self.paper.valuePerVisitText !== undefined) {
+        self.paper.valuePerVisitText.remove();
+      }
+
+      self.paper.valuePerVisitText = self.paper.text(
+          // x
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2) + 12,
+          // y
+          self.margin.top,
+          // text
+          _.max(
+            self.collection.models,
+            function(model) {
+              return model.getValuePerVisit();
+            }).getValuePerVisit())
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "end",
+          "font-size": 14
+        });
+
+      if (self.paper.zeroValuePerVisitText === undefined) {
+        self.paper.zeroValuePerVisitText = self.paper.text(
+          // x
+          this.margin.left + this.widthMinusMargins() +
+            Math.floor(this.margin.right / 2) + 12,
+          // y
+          self.margin.top + self.heightMinusMargins(),
+          // text
+          "0")
+        .rotate(-90)
+        .attr(
+        {
+          "color": "#565d64",
+          "text-anchor": "start",
+          "font-size": 14
+        });
+      }
     }
+
   });
 
   return ChartView;

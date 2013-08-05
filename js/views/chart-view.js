@@ -403,11 +403,13 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           // y
           self.margin.top,
           // text
-          _.max(
-            self.collection.models,
-            function(model) {
-              return parseInt(model.get("visits"), 10);
-            }).get("visits"))
+          Math.max(
+            self.minimalMax,
+            _.max(
+              self.collection.models,
+              function(model) {
+                return parseInt(model.get("visits"), 10);
+              }).get("visits")))
         .rotate(-90)
         .attr(
         {
@@ -497,11 +499,13 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           // y
           self.margin.top,
           // text
-          _.max(
-            self.collection.models,
-            function(model) {
-              return parseInt(model.get("value"), 10);
-            }).get("value"))
+          Math.max(
+            self.minimalMax,
+            _.max(
+              self.collection.models,
+              function(model) {
+                return parseInt(model.get("value"), 10);
+              }).get("value")))
         .rotate(-90)
         .attr(
         {
@@ -529,16 +533,6 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
     },
 
     renderValuePerVisitScale: function() {
-      /*var x0 = this.margin.left + this.widthMinusMargins() +
-        Math.floor(this.margin.right / 2);
-      var y0 = this.margin.bottom;
-      var x1 = x0;
-      var y1 = this.margin.bottom + this.heightMinusMargins();
-      this.renderLine(x0, y0, x1, y1).attr(
-        {
-          stroke: "#4CB849",
-          "stroke-width": 1
-        });*/
       var self = this;
 
       // todo: this should be a single path
@@ -608,11 +602,13 @@ define(["jquery", "backbone", "raphael"], function($, Backbone, Raphael) {
           // y
           self.margin.top,
           // text
-          _.max(
+          Math.max(
+            self.minimalMax,
+            _.max(
             self.collection.models,
             function(model) {
               return model.getValuePerVisit();
-            }).getValuePerVisit())
+            }).getValuePerVisit()))
         .rotate(-90)
         .attr(
         {
